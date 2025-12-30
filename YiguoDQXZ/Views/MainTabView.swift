@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+import Combine
 
 struct MainTabView: View {
+    @EnvironmentObject var authManager: AuthManager
     @State private var selectedTab = 0
 
     var body: some View {
@@ -27,6 +29,7 @@ struct MainTabView: View {
                 .tag(1)
 
             ProfileTabView()
+                .environmentObject(authManager)
                 .tabItem {
                     Image(systemName: "person.fill")
                     Text("个人")
@@ -46,4 +49,5 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
+        .environmentObject(AuthManager.shared)
 }

@@ -134,7 +134,7 @@ struct SupabaseTestView: View {
         // 检查是否是 PostgreSQL REST API 错误（说明连接成功，只是表不存在）
         if errorString.contains("PGRST") ||
            errorString.contains("Could not find") ||
-           errorString.contains("relation") && errorString.contains("does not exist") ||
+           (errorString.contains("relation") && errorString.contains("does not exist")) ||
            errorString.contains("42P01") {
             // 这些错误说明已经成功连接到 Supabase，只是表不存在
             isSuccess = true
@@ -144,20 +144,23 @@ struct SupabaseTestView: View {
                   errorString.contains("NSURLErrorDomain") ||
                   errorString.contains("Could not connect") ||
                   errorString.contains("network") ||
-                  errorString.contains("Internet") {
+                  errorString.contains("Internet") ||
+                  errorString.contains("URL") {
             // 网络或 URL 错误
             isSuccess = false
             logText += "[\(timestamp)] ❌ 连接失败：URL 错误或无网络\n"
         } else if errorString.contains("Invalid API key") ||
                   errorString.contains("apikey") ||
-                  errorString.contains("JWT") {
+                  errorString.contains("JWT") ||
+                  errorString.contains("invalid_api_key") {
             // API Key 错误
             isSuccess = false
             logText += "[\(timestamp)] ❌ 连接失败：API Key 无效\n"
         } else {
-            // 其他错误 - 可能还是连接成功的
-            // 如果收到了服务器响应，即使是错误也算连接成功
-            if errorString.contains("PostgrestError") || errorString.contains("code") {
+            // 其他错误 - 检查是否收到了服务器响应
+            if errorString.contains("PostgrestError") ||
+               errorString.contains("code") ||
+               errorString.contains("message") {
                 isSuccess = true
                 logText += "[\(timestamp)] ✅ 连接成功（服务器返回错误响应）\n"
             } else {
@@ -183,4 +186,3 @@ private struct EmptyResponse: Decodable {}
         SupabaseTestView()
     }
 }
-
