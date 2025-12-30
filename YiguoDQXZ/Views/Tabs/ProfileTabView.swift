@@ -2,13 +2,13 @@
 //  ProfileTabView.swift
 //  YiguoDQXZ
 //
+//  个人页面 - 显示用户信息和登出功能
+//
 //  Created by 赵燕燕 on 2025/12/25.
 //
 
 import SwiftUI
-import Combine
 import Supabase
-import Auth
 
 struct ProfileTabView: View {
     @EnvironmentObject var authManager: AuthManager
@@ -35,6 +35,23 @@ struct ProfileTabView: View {
                         logoutButton
                     }
                     .padding()
+                }
+
+                // 加载遮罩
+                if authManager.isLoading {
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        Text("正在退出...")
+                            .foregroundColor(.white)
+                    }
+                    .padding(32)
+                    .background(ApocalypseTheme.cardBackground)
+                    .cornerRadius(16)
                 }
             }
             .navigationTitle("幸存者档案")
@@ -144,11 +161,7 @@ struct ProfileTabView: View {
     // MARK: - 登出操作
     private func performLogout() {
         Task {
-            do {
-                try await authManager.signOut()
-            } catch {
-                print("登出失败: \(error.localizedDescription)")
-            }
+            await authManager.signOut()
         }
     }
 }

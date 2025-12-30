@@ -169,22 +169,16 @@ struct RegisterView: View {
             return
         }
 
+        // 使用 OTP 流程发送验证码
         Task {
-            do {
-                try await authManager.signUp(
-                    email: email,
-                    password: password,
-                    username: username
-                )
-                alertMessage = "欢迎加入幸存者联盟，\(username)！"
+            await authManager.sendRegisterOTP(email: email)
+
+            if authManager.otpSent {
+                alertMessage = "验证码已发送到 \(email)，请查收邮件完成注册"
                 isSuccess = true
                 showAlert = true
-            } catch let error as AuthError {
-                alertMessage = error.errorDescription ?? "注册失败"
-                isSuccess = false
-                showAlert = true
-            } catch {
-                alertMessage = error.localizedDescription
+            } else if let error = authManager.errorMessage {
+                alertMessage = error
                 isSuccess = false
                 showAlert = true
             }

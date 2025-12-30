@@ -2,6 +2,8 @@
 //  SplashView.swift
 //  YiguoDQXZ
 //
+//  启动页视图 - 显示Logo、加载动画、检查会话状态
+//
 //  Created by 赵燕燕 on 2025/12/25.
 //
 
@@ -9,6 +11,12 @@ import SwiftUI
 
 /// 启动页视图
 struct SplashView: View {
+    /// AuthManager 引用
+    @ObservedObject var authManager: AuthManager
+
+    /// 是否完成加载
+    @Binding var isFinished: Bool
+
     /// 是否显示加载动画
     @State private var isAnimating = false
 
@@ -20,9 +28,6 @@ struct SplashView: View {
 
     /// Logo 透明度
     @State private var logoOpacity: Double = 0
-
-    /// 是否完成加载
-    @Binding var isFinished: Bool
 
     var body: some View {
         ZStack {
@@ -129,7 +134,7 @@ struct SplashView: View {
         }
         .onAppear {
             startAnimations()
-            simulateLoading()
+            performLoading()
         }
     }
 
@@ -148,27 +153,72 @@ struct SplashView: View {
         }
     }
 
-    // MARK: - 模拟加载
+    // MARK: - 执行加载
 
-    private func simulateLoading() {
-        // 模拟加载过程
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            loadingText = "正在加载资源..."
+    private func performLoading() {
+        // 步骤1：初始化
+        loadingText = "正在初始化..."
+
+        // 步骤2：检查会话（异步）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            loadingText = "正在检查登录状态..."
+
+            // 调用 AuthManager 检查会话
+            Task {
+                await authManager.checkSession()
+
+                // 等待初始化完成
+                await MainActor.run {
+                    loadingText = "正在加载资源..."
+                }
+            }
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        // 步骤3：加载资源
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
             loadingText = "准备就绪"
         }
 
-        // 完成加载，进入主界面
+        // 步骤4：完成加载，进入主界面
+        // 等待 AuthManager 初始化完成
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                isFinished = true
+            // 确保 AuthManager 已完成初始化
+            if authManager.isInitialized {
+                finishLoading()
+            } else {
+                // 如果还没初始化完成，继续等待
+                waitForInitialization()
             }
+        }
+    }
+
+    /// 等待 AuthManager 初始化完成
+    private func waitForInitialization() {
+        loadingText = "正在验证身份..."
+
+        // 轮询检查初始化状态
+        Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak authManager] timer in
+            Task { @MainActor in
+                guard let authManager = authManager else {
+                    timer.invalidate()
+                    return
+                }
+                if authManager.isInitialized {
+                    timer.invalidate()
+                    finishLoading()
+                }
+            }
+        }
+    }
+
+    /// 完成加载，进入主界面
+    private func finishLoading() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isFinished = true
         }
     }
 }
 
 #Preview {
-    SplashView(isFinished: .constant(false))
+    SplashView(authManager: AuthManager.shared, isFinished: .constant(false))
 }

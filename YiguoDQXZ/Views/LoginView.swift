@@ -178,17 +178,14 @@ struct LoginView: View {
     // MARK: - 执行登录
     private func performLogin() {
         Task {
-            do {
-                try await authManager.signIn(email: email, password: password)
+            await authManager.signIn(email: email, password: password)
+
+            if authManager.isAuthenticated {
                 alertMessage = "欢迎回来！"
                 isSuccess = true
                 showAlert = true
-            } catch let error as AuthError {
-                alertMessage = error.errorDescription ?? "登录失败"
-                isSuccess = false
-                showAlert = true
-            } catch {
-                alertMessage = error.localizedDescription
+            } else if let error = authManager.errorMessage {
+                alertMessage = error
                 isSuccess = false
                 showAlert = true
             }
@@ -282,17 +279,14 @@ struct ForgotPasswordView: View {
 
     private func sendResetEmail() {
         Task {
-            do {
-                try await authManager.resetPassword(email: email)
-                alertMessage = "重置链接已发送到 \(email)，请查收邮件"
+            await authManager.sendResetOTP(email: email)
+
+            if authManager.otpSent {
+                alertMessage = "重置验证码已发送到 \(email)，请查收邮件"
                 isSuccess = true
                 showAlert = true
-            } catch let error as AuthError {
-                alertMessage = error.errorDescription ?? "发送失败"
-                isSuccess = false
-                showAlert = true
-            } catch {
-                alertMessage = error.localizedDescription
+            } else if let error = authManager.errorMessage {
+                alertMessage = error
                 isSuccess = false
                 showAlert = true
             }
