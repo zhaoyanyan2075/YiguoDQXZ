@@ -137,7 +137,7 @@ struct LoginView: View {
             showForgotPassword = true
         }
         .font(.subheadline)
-        .foregroundColor(ApocalypseTheme.accent)
+        .foregroundColor(ApocalypseTheme.primary)
     }
 
     // MARK: - 分隔线
@@ -164,7 +164,7 @@ struct LoginView: View {
             Button("立即注册") {
                 showRegister = true
             }
-            .foregroundColor(ApocalypseTheme.accent)
+            .foregroundColor(ApocalypseTheme.primary)
             .fontWeight(.semibold)
         }
         .font(.subheadline)
@@ -265,7 +265,7 @@ struct ForgotPasswordView: View {
                     Button("取消") {
                         dismiss()
                     }
-                    .foregroundColor(ApocalypseTheme.accent)
+                    .foregroundColor(ApocalypseTheme.primary)
                 }
             }
         }

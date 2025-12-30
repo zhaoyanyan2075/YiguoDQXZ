@@ -144,7 +144,7 @@ struct RegisterView: View {
             Button("去登录") {
                 showLogin = true
             }
-            .foregroundColor(ApocalypseTheme.accent)
+            .foregroundColor(ApocalypseTheme.primary)
             .fontWeight(.semibold)
         }
         .font(.subheadline)

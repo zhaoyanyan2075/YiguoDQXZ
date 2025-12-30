@@ -88,7 +88,7 @@ struct AuthContainerView: View {
                             showRegister.toggle()
                         }
                     }
-                    .foregroundColor(ApocalypseTheme.accent)
+                    .foregroundColor(ApocalypseTheme.primary)
                 }
             }
         }
