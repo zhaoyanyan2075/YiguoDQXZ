@@ -341,6 +341,7 @@ struct RegisterSection: View {
 
     @State private var email = ""
     @State private var otpCode = ""
+    @State private var username = ""
     @State private var password = ""
     @State private var confirmPassword = ""
 
@@ -454,13 +455,21 @@ struct RegisterSection: View {
         }
     }
 
-    // MARK: - 第三步：设置密码
+    // MARK: - 第三步：设置用户名和密码
     private var step3PasswordSetup: some View {
         VStack(spacing: 16) {
-            Text("设置你的登录密码")
+            Text("设置你的幸存者信息")
                 .font(.subheadline)
                 .foregroundColor(ApocalypseTheme.textSecondary)
 
+            // 用户名输入
+            AuthTextField(
+                icon: "person.fill",
+                placeholder: "幸存者ID（用户名）",
+                text: $username
+            )
+
+            // 密码输入
             AuthTextField(
                 icon: "lock.fill",
                 placeholder: "设置密码（至少6位）",
@@ -468,12 +477,20 @@ struct RegisterSection: View {
                 isSecure: true
             )
 
+            // 确认密码
             AuthTextField(
                 icon: "lock.shield.fill",
                 placeholder: "确认密码",
                 text: $confirmPassword,
                 isSecure: true
             )
+
+            // 用户名提示
+            if !username.isEmpty && username.count < 2 {
+                Text("用户名至少2个字符")
+                    .font(.caption)
+                    .foregroundColor(ApocalypseTheme.danger)
+            }
 
             // 密码不匹配提示
             if !confirmPassword.isEmpty && password != confirmPassword {
@@ -496,7 +513,7 @@ struct RegisterSection: View {
     }
 
     private var canComplete: Bool {
-        password.count >= 6 && password == confirmPassword
+        username.count >= 2 && password.count >= 6 && password == confirmPassword
     }
 
     // MARK: - 操作方法
@@ -526,7 +543,7 @@ struct RegisterSection: View {
 
     private func completeRegistration() {
         Task {
-            await authManager.completeRegistration(password: password)
+            await authManager.completeRegistration(username: username, password: password)
         }
     }
 

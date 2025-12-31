@@ -248,12 +248,19 @@ class AuthManager: ObservableObject {
         isLoading = false
     }
 
-    /// 完成注册（设置密码）
-    /// - Parameter password: 用户设置的密码
+    /// 完成注册（设置用户名和密码）
+    /// - Parameters:
+    ///   - username: 用户名
+    ///   - password: 用户设置的密码
     /// - Note: 必须在 verifyRegisterOTP 成功后调用
-    func completeRegistration(password: String) async {
+    func completeRegistration(username: String, password: String) async {
         guard otpVerified else {
             errorMessage = "请先验证邮箱验证码"
+            return
+        }
+
+        guard let userId = currentUser?.id else {
+            errorMessage = "用户信息异常，请重试"
             return
         }
 
@@ -261,8 +268,17 @@ class AuthManager: ObservableObject {
         errorMessage = nil
 
         do {
-            // 更新用户密码
+            // 1. 更新用户密码
             try await supabase.auth.update(user: UserAttributes(password: password))
+
+            // 2. 创建用户 profile（保存用户名）
+            try await supabase
+                .from("profiles")
+                .insert([
+                    "id": userId.uuidString,
+                    "username": username
+                ])
+                .execute()
 
             // 设置密码成功，完成注册流程
             needsPasswordSetup = false
@@ -270,11 +286,17 @@ class AuthManager: ObservableObject {
             otpSent = false
             otpVerified = false
 
-            print("🎉 注册完成！用户已设置密码并完成认证")
+            print("🎉 注册完成！用户名: \(username)")
 
         } catch {
-            errorMessage = parseError(error)
-            print("❌ 设置密码失败: \(error)")
+            // 检查是否是用户名重复错误
+            let errorString = String(describing: error)
+            if errorString.contains("duplicate") || errorString.contains("unique") {
+                errorMessage = "该用户名已被使用，请换一个"
+            } else {
+                errorMessage = parseError(error)
+            }
+            print("❌ 完成注册失败: \(error)")
         }
 
         isLoading = false
