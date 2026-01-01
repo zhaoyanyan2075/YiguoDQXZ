@@ -46,6 +46,9 @@ class AuthManager: ObservableObject {
     /// 验证码是否已验证（等待设置密码）
     @Published var otpVerified: Bool = false
 
+    /// 是否正在注册流程中（防止自动认证）
+    @Published var isInRegistrationFlow: Bool = false
+
     /// 是否已完成初始化检查
     @Published var isInitialized: Bool = false
 
@@ -109,12 +112,16 @@ class AuthManager: ObservableObject {
             // 用户登录
             if let session = session {
                 currentUser = session.user
-                // 如果正在注册/找回密码流程中（otpSent=true），不要自动设置认证状态
-                // 让流程继续到设置密码步骤
-                if !otpSent && !otpVerified {
+                // 如果正在注册流程中，不要自动设置认证状态
+                // 必须等用户完成设置用户名和密码
+                if isInRegistrationFlow {
+                    print("✅ 用户登录（注册流程中，不自动认证）: \(session.user.email ?? "未知")")
+                } else if !otpSent && !otpVerified {
                     checkUserPasswordStatus(user: session.user)
+                    print("✅ 用户登录: \(session.user.email ?? "未知")")
+                } else {
+                    print("✅ 用户登录（OTP流程中）: \(session.user.email ?? "未知")")
                 }
-                print("✅ 用户登录: \(session.user.email ?? "未知"), otpSent=\(otpSent), otpVerified=\(otpVerified)")
             }
 
         case .signedOut:
@@ -172,6 +179,7 @@ class AuthManager: ObservableObject {
         needsPasswordSetup = false
         otpSent = false
         otpVerified = false
+        isInRegistrationFlow = false
         errorMessage = nil
     }
 
@@ -197,6 +205,7 @@ class AuthManager: ObservableObject {
     func sendRegisterOTP(email: String) async {
         isLoading = true
         errorMessage = nil
+        isInRegistrationFlow = true  // 标记进入注册流程
 
         do {
             // 发送 OTP 验证码，允许创建新用户
@@ -237,12 +246,14 @@ class AuthManager: ObservableObject {
             currentUser = session.user
             otpVerified = true
             needsPasswordSetup = true  // 标记需要设置密码
-            // 注意：isAuthenticated 保持 false，直到设置密码完成
+            isAuthenticated = false    // 强制保持未认证状态，必须完成设置密码
+            // isInRegistrationFlow 保持 true，直到 completeRegistration 完成
 
-            print("✅ 注册验证码验证成功，等待设置密码")
+            print("✅ 注册验证码验证成功，等待设置用户名和密码")
 
         } catch {
             errorMessage = parseError(error)
+            isInRegistrationFlow = false  // 验证失败，退出注册流程
             print("❌ 验证注册验证码失败: \(error)")
         }
 
@@ -283,9 +294,10 @@ class AuthManager: ObservableObject {
 
             // 设置密码成功，完成注册流程
             needsPasswordSetup = false
-            isAuthenticated = true
             otpSent = false
             otpVerified = false
+            isInRegistrationFlow = false  // 退出注册流程
+            isAuthenticated = true        // 最后才设置认证成功
 
             print("🎉 注册完成！用户名: \(username)")
 
@@ -497,6 +509,7 @@ class AuthManager: ObservableObject {
         otpSent = false
         otpVerified = false
         needsPasswordSetup = false
+        isInRegistrationFlow = false
         errorMessage = nil
     }
 
