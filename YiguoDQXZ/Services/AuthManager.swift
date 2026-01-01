@@ -98,8 +98,11 @@ class AuthManager: ObservableObject {
                     handleSessionExpired()
                 } else {
                     currentUser = session.user
-                    checkUserPasswordStatus(user: session.user)
-                    print("✅ 初始会话: \(session.user.email ?? "未知")")
+                    // 如果正在注册流程中，不要自动设置认证状态
+                    if !isInRegistrationFlow {
+                        checkUserPasswordStatus(user: session.user)
+                    }
+                    print("✅ 初始会话: \(session.user.email ?? "未知"), isInRegistrationFlow=\(isInRegistrationFlow)")
                 }
             } else {
                 currentUser = nil
@@ -185,15 +188,23 @@ class AuthManager: ObservableObject {
 
     /// 检查用户密码状态
     private func checkUserPasswordStatus(user: User) {
+        // 如果正在注册流程中，绝对不设置认证状态
+        guard !isInRegistrationFlow else {
+            print("⚠️ checkUserPasswordStatus: 正在注册流程中，跳过")
+            return
+        }
+
         // 检查用户是否有 email identity（说明设置了密码）
         if let identities = user.identities,
            identities.contains(where: { $0.provider == "email" }) {
             isAuthenticated = true
             needsPasswordSetup = false
+            print("✅ checkUserPasswordStatus: 用户已认证")
         } else {
             // 没有 email identity，可能需要设置密码
             isAuthenticated = false
             needsPasswordSetup = true
+            print("⚠️ checkUserPasswordStatus: 用户需要设置密码")
         }
     }
 
