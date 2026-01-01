@@ -109,11 +109,12 @@ class AuthManager: ObservableObject {
             // 用户登录
             if let session = session {
                 currentUser = session.user
-                // 如果不是 OTP 流程中，直接设置为已认证
-                if !otpVerified {
+                // 如果正在注册/找回密码流程中（otpSent=true），不要自动设置认证状态
+                // 让流程继续到设置密码步骤
+                if !otpSent && !otpVerified {
                     checkUserPasswordStatus(user: session.user)
                 }
-                print("✅ 用户登录: \(session.user.email ?? "未知")")
+                print("✅ 用户登录: \(session.user.email ?? "未知"), otpSent=\(otpSent), otpVerified=\(otpVerified)")
             }
 
         case .signedOut:
