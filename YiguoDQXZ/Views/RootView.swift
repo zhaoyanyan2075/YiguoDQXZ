@@ -25,29 +25,23 @@ struct RootView: View {
                     .transition(.opacity)
             } else {
                 // 根据认证状态显示不同界面
-                Group {
-                    if authManager.isAuthenticated {
-                        // 已登录且完成所有流程 → 显示主界面
-                        MainTabView()
-                            .environmentObject(authManager)
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .trailing).combined(with: .opacity),
-                                removal: .move(edge: .leading).combined(with: .opacity)
-                            ))
-                    } else if authManager.needsPasswordSetup && authManager.otpVerified {
-                        // OTP 已验证但需要设置密码 → 显示设置密码页面
-                        // 这种情况在 AuthView 内部处理，但如果用户杀掉 App 重新打开
-                        // 会到这里，需要重新走认证流程
-                        AuthView()
-                            .transition(.opacity)
-                    } else {
-                        // 未登录 → 显示认证页面
-                        AuthView()
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .leading).combined(with: .opacity),
-                                removal: .move(edge: .trailing).combined(with: .opacity)
-                            ))
-                    }
+                if authManager.isAuthenticated {
+                    // 已登录且完成所有流程 → 显示主界面
+                    MainTabView()
+                        .environmentObject(authManager)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .trailing).combined(with: .opacity),
+                            removal: .move(edge: .leading).combined(with: .opacity)
+                        ))
+                } else {
+                    // 未登录或注册流程中 → 显示认证页面
+                    // 使用 id 确保 SwiftUI 不会重建视图
+                    AuthView()
+                        .id("authView")
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .leading).combined(with: .opacity),
+                            removal: .move(edge: .trailing).combined(with: .opacity)
+                        ))
                 }
             }
         }

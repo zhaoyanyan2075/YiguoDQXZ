@@ -23,6 +23,15 @@ struct AuthView: View {
     @State private var showToast = false
     @State private var toastMessage = ""
 
+    /// 计算当前应该显示的 Tab（注册流程中强制显示注册 tab）
+    private var effectiveTab: Int {
+        // 如果正在注册流程中，强制显示注册 tab
+        if authManager.isInRegistrationFlow || authManager.otpSent || authManager.otpVerified {
+            return 1
+        }
+        return selectedTab
+    }
+
     var body: some View {
         ZStack {
             // 背景渐变
@@ -45,8 +54,8 @@ struct AuthView: View {
                     // Tab 切换
                     tabSelector
 
-                    // 内容区域
-                    if selectedTab == 0 {
+                    // 内容区域（使用 effectiveTab 确保注册流程中始终显示注册界面）
+                    if effectiveTab == 0 {
                         LoginSection(
                             authManager: authManager,
                             showForgotPassword: $showForgotPassword
@@ -129,17 +138,23 @@ struct AuthView: View {
     // MARK: - Tab 切换
     private var tabSelector: some View {
         HStack(spacing: 0) {
-            TabButton(title: "登录", isSelected: selectedTab == 0) {
+            TabButton(title: "登录", isSelected: effectiveTab == 0) {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     selectedTab = 0
-                    authManager.resetFlowState()
+                    // 只有不在注册流程中才重置状态
+                    if !authManager.isInRegistrationFlow && !authManager.otpSent && !authManager.otpVerified {
+                        authManager.resetFlowState()
+                    }
                 }
             }
 
-            TabButton(title: "注册", isSelected: selectedTab == 1) {
+            TabButton(title: "注册", isSelected: effectiveTab == 1) {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     selectedTab = 1
-                    authManager.resetFlowState()
+                    // 只有不在注册流程中才重置状态
+                    if !authManager.isInRegistrationFlow && !authManager.otpSent && !authManager.otpVerified {
+                        authManager.resetFlowState()
+                    }
                 }
             }
         }
