@@ -291,10 +291,13 @@ class AuthManager: ObservableObject {
         errorMessage = nil
 
         do {
-            // 1. 更新用户密码
-            try await supabase.auth.update(user: UserAttributes(password: password))
+            // 1. 更新用户密码和 userMetadata（保存用户名）
+            try await supabase.auth.update(user: UserAttributes(
+                password: password,
+                data: ["username": .string(username)]
+            ))
 
-            // 2. 创建用户 profile（保存用户名）
+            // 2. 创建用户 profile（保存用户名到 profiles 表）
             try await supabase
                 .from("profiles")
                 .insert([
@@ -302,6 +305,11 @@ class AuthManager: ObservableObject {
                     "username": username
                 ])
                 .execute()
+
+            // 3. 刷新当前用户信息，确保 userMetadata 更新
+            if let session = try? await supabase.auth.session {
+                currentUser = session.user
+            }
 
             // 设置密码成功，完成注册流程
             needsPasswordSetup = false
